@@ -15,6 +15,10 @@ def timeDifference(startTime, endTime):
 	endHours = float(endTime[:2]) + float(endTime[3:5]) / 60
 	return (endHours - startHours) % 24.0	# Modulus so that if negative, it adds 24 hours
 
+# Print invalid usage
+def printInvalidUsage():
+	print("Usage: python3 hoursLogger.py 'start description'|stop|clear|state")
+
 # Possible States are:
 #	Idle: Waiting for a log to start
 #	Logging: Started logging
@@ -23,16 +27,25 @@ class LogState(Enum):
 	idleState = "Idle"
 
 # Check arguments
-if len(sys.argv) >= 2:
-	if not(
-		sys.argv[1] == "start" and len(sys.argv) == 3 or \
-		sys.argv[1] == "stop" or \
-		sys.argv[1] == "clear"
+if len(sys.argv) == 1:
+	printInvalidUsage()
+	sys.exit()
+
+elif len(sys.argv) == 2:
+	if not(	sys.argv[1] == "stop" or \
+		sys.argv[1] == "clear" or \
+		sys.argv[1] == "state"
 		):
 
-		# Print invalid usage
-		print("Usage: python3 hoursLogger.py 'start description'|stop|clear")
+		printInvalidUsage()
 		sys.exit()
+
+elif len(sys.argv) == 3:
+	if not(sys.argv[1] == "start"):
+		printInvalidUsage()
+
+else:
+	printInvalidUsage()
 
 # Check if clearing
 if sys.argv[1] == "clear":
@@ -73,6 +86,11 @@ stateFile = open('state.txt', 'r+')
 state = json.load(stateFile)
 
 stateFile.seek(0)	# Reset file ptr
+
+# If command is state, then print it and stop here
+if sys.argv[1] == "state":
+	print("Current state is:", state)
+	sys.exit()
 
 # Valid actions are:
 #	start: Starts logging if state is Idle
