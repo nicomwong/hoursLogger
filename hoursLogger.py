@@ -8,16 +8,21 @@ def getDate():
 	return subprocess.check_output("date").decode()[:-1]
 
 # Returns delta time in hours
-# Inputs are in HH::MM::SS 24-hour format
+# Inputs are in HH:MM:SS 24-hour format
 # Output will assume delta time is less than 24 hours
 def timeDifference(startTime, endTime):
 	startHours = float(startTime[:2]) + float(startTime[3:5]) / 60
 	endHours = float(endTime[:2]) + float(endTime[3:5]) / 60
-	return (endHours - startHours) % 24.0	# Modulus so that if negative, it adds 24 hours
+	return (endHours - startHours) % 24.0	# Mod 24 so that if negative, it adds 24 hours
+											# In the case that the log range includes 12 AM
 
 # Print invalid usage
 def printInvalidUsage():
 	print("Usage: python3 hoursLogger.py 'start description'|stop|clear|state")
+
+# Returns a string of n spaces
+def nSpaces(n):
+	return ' '*n
 
 # Possible States are:
 #	Idle: Waiting for a log to start
@@ -56,7 +61,7 @@ if sys.argv[1] == "clear":
 		# Copy log file to history file
 		with open('log_history.txt', 'a') as historyFile:
 
-			historyFile.write("----Logged hours cleared\t" + getDate() + '----\n')
+			historyFile.write("----Logged hours cleared on" + nSpaces(4) + getDate() + '----\n')
 			historyFile.write( logFile.read() )
 			historyFile.write('\n')
 		
@@ -65,7 +70,7 @@ if sys.argv[1] == "clear":
 		logFile.seek(0)
 
 		# Put in headers
-		logFile.write("Description\t\t\tStart Date\t\t\t\t\t\tEnd Date\t\t\t\t\t\tHours\n")
+		logFile.write("Description" + nSpaces(9) + "Start Date" + nSpaces(22) + "End Date" + nSpaces(24) + "Hours\n")
 
 		# Reset state
 		with open('state.txt', 'w') as stateFile:
@@ -110,7 +115,7 @@ with open('log.txt', 'a+') as logFile:
 			logFile.write(description + ' ' * 4)
 
 			# Insert start date
-			logFile.write( getDate() + "\t" )
+			logFile.write( getDate() + nSpaces(4) )
 
 			# Update state
 			json.dump(LogState.loggingState.value, stateFile)
@@ -126,14 +131,14 @@ with open('log.txt', 'a+') as logFile:
 		if state == "Logging":
 			
 			# Calc. delta time in hours
-			logFile.seek( logFile.tell() - 29)	# Go back to beginning of the line
+			logFile.seek( logFile.tell() - 32)	# Go back to beginning of the start date
 			startTime = logFile.readline()[11:19]	# Read the startTime
 			endDate = getDate()
 			endTime = endDate[11:19]	# Get the endTime
 			deltaTime = timeDifference(startTime, endTime)
 
 			# Insert end date
-			logFile.write( endDate + "\t" )
+			logFile.write( endDate + nSpaces(4) )
 
 			# Insert hours difference
 			logFile.write('{:.2f}'.format(deltaTime) + '\n')
@@ -150,3 +155,6 @@ with open('log.txt', 'a+') as logFile:
 		# Print invalid command
 		print("Usage: python3 hoursLogger.py 'start description'|stop|clear")
 		sys.exit()
+
+# Close the state file
+stateFile.close()
