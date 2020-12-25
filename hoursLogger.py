@@ -18,7 +18,7 @@ def timeDifference(startTime, endTime):
 
 # Print invalid usage
 def printInvalidUsage():
-	print("Usage: python3 hoursLogger.py 'start description'|stop|clear|state")
+	print("Usage: python3 hoursLogger.py 'start description'|stop|clear|state|total")
 
 # Returns a string of n spaces
 def nSpaces(n):
@@ -39,7 +39,8 @@ if len(sys.argv) == 1:
 elif len(sys.argv) == 2:
 	if not(	sys.argv[1] == "stop" or \
 		sys.argv[1] == "clear" or \
-		sys.argv[1] == "state"
+		sys.argv[1] == "state" or \
+		sys.argv[1] == "total"
 		):
 
 		printInvalidUsage()
@@ -100,6 +101,8 @@ if sys.argv[1] == "state":
 # Valid actions are:
 #	start: Starts logging if state is Idle
 #	stop: Ends logging if state is Logging
+#	state: Displays current state
+#	total: Displays total hours in current log
 
 # Open logging file in append mode
 with open('log.txt', 'a+') as logFile:
@@ -126,6 +129,7 @@ with open('log.txt', 'a+') as logFile:
 			# Print invalid
 			print("Cannot start logging. Current state is already Logging")
 	
+	# Stop
 	elif sys.argv[1] == "stop":
 
 		if state == "Logging":
@@ -150,6 +154,22 @@ with open('log.txt', 'a+') as logFile:
 		else:
 			# Print invalid
 			print("Cannot end logging. Current state is Idle")
+
+	# Total
+	elif sys.argv[1] == "total":
+
+		# Get list of lines of log file
+		logFile.seek(0)	# Reset to start of file
+		lineList = logFile.readlines()
+
+		# Add up the total hours
+		totalHours = 0
+		for line in lineList[1:]:	# SKip first line (headers)
+			totalHours += float(line[84:89])
+		
+		# Print total hours
+		print("Since " + getDate()[:10] + "," )
+		print("Total hours logged: {:.2f}".format(totalHours) + " hours")
 
 	else:
 		# Print invalid command
