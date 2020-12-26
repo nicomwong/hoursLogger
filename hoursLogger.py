@@ -3,6 +3,13 @@ import json
 from enum import Enum
 import subprocess
 
+# Get current executable path
+execPath = subprocess.check_output("pwd").decode()[:-1]
+
+logFilePath = execPath + "/log.txt"
+logHistoryPath = execPath + "/log_history.txt"
+stateFilePath = execPath + "/state.txt"
+
 # Define enum class for log state
 # Possible States are:
 #	Idle: Waiting for a log to start
@@ -52,10 +59,10 @@ def runHelpCommand():
 def runClearCommand():
 
 	# Open log file
-	with open('log.txt', 'r+') as logFile:
+	with open(logFilePath, 'r+') as logFile:
 		
 		# Copy log file to history file
-		with open('log_history.txt', 'a') as historyFile:
+		with open(logHistoryPath, 'a') as historyFile:
 
 			historyFile.write("----Logged hours cleared on" + nSpaces(4) + getDate() + '----\n')
 			historyFile.write( logFile.read() )
@@ -69,7 +76,7 @@ def runClearCommand():
 		logFile.write("Description" + nSpaces(29) + "Start Date" + nSpaces(22) + "End Date" + nSpaces(24) + "Hours\n")
 
 		# Reset state
-		with open('state.txt', 'w') as stateFile:
+		with open(stateFilePath, 'w') as stateFile:
 			
 			json.dump(LogState.idleState.value, stateFile)
 			stateFile.truncate()
@@ -101,7 +108,7 @@ def runStartCommand(stateFile, description):
 		return
 
 	# Open logging file in append mode
-	with open('log.txt', 'a+') as logFile:
+	with open(logFilePath, 'a+') as logFile:
 
 		# Insert description
 		logFile.write(trimmedDescription + ' ' * 4)
@@ -120,7 +127,7 @@ def runStartCommand(stateFile, description):
 def runHoursCommand(stateFile):
 
 	# Open logging file in append mode
-	with open('log.txt', 'a+') as logFile:
+	with open(logFilePath, 'a+') as logFile:
 
 		# Calc. delta time in hours
 		logFile.seek( logFile.tell() - 32)	# Go back to beginning of the start date
@@ -136,7 +143,7 @@ def runHoursCommand(stateFile):
 def runEndCommand(stateFile):
 	
 	# Open logging file in append mode
-	with open('log.txt', 'a+') as logFile:
+	with open(logFilePath, 'a+') as logFile:
 
 		# Calc. delta time in hours
 		logFile.seek( logFile.tell() - 32)	# Go back to beginning of the start date
@@ -162,7 +169,7 @@ def runEndCommand(stateFile):
 def runTotalCommand():
 	
 	# Open logging file in read mode
-	with open('log.txt', 'r') as logFile:
+	with open(logFilePath, 'r') as logFile:
 		
 		# Get list of lines of log file
 		logFile.seek(0)	# Reset to start of file
@@ -250,7 +257,7 @@ def processCommandInteractively(cmdParamList):
 		return
 
 	# Open state file in read/write mode
-	with open('state.txt', 'r+') as stateFile:
+	with open(stateFilePath, 'r+') as stateFile:
 
 		# Get current state
 		state = json.load(stateFile)
@@ -375,7 +382,7 @@ if sys.argv[1] == "clear":
 	sys.exit()
 
 # Open state file in read/write
-stateFile = open('state.txt', 'r+')
+stateFile = open(stateFilePath, 'r+')
 
 # Get current state
 state = json.load(stateFile)
