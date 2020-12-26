@@ -254,11 +254,6 @@ def processCommandInteractively(cmdParamList):
 		runClearCommand()
 		return
 
-	# Check if show command
-	if cmd == "show":
-		runShowCommand()
-		return
-
 	# Open state file in read/write mode
 	with open('state.txt', 'r+') as stateFile:
 
@@ -308,8 +303,23 @@ def processCommandInteractively(cmdParamList):
 
 		# Total command
 		elif cmd == "total":
-			# Run the total command
-			runTotalCommand()
+			
+			if state == "Idle":
+				# Run the total command
+				runTotalCommand()
+
+			else:
+				print("To check the total, no log can be in progress")
+
+		# Check if show command
+		elif cmd == "show":
+
+			if state == "Idle":
+				runShowCommand()
+				return
+
+			else:
+				print("To show, no log can be in progress")
 
 		else:
 			# Print invalid command
