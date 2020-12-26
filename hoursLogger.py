@@ -36,16 +36,19 @@ def nSpaces(n):
 # Only for the interactive mode
 def runHelpCommand():
 	
-	print("	Valid commands are:	\n\
-			help:\tOutputs this list of commands \n\
-			start description:\tStarts logging if state is Idle \n\
-			end:\tEnds logging if state is Logging \n\
-			clear:\tClears log.txt and appends it to log_history.txt \n\
-			state:\tDisplays current state \n\
-			total:\tDisplays total hours in current log")
+	print("	Valid commands are:\n\
+			help:\tOutputs this list of commands\n\
+			start description:\tStarts logging if state is Idle\n\
+						'description' is a maximum of 40 characters\n\
+			end:\tEnds logging if state is Logging\n\
+			clear:\tClears log.txt and appends it to log_history.txt\n\
+			state:\tDisplays current state\n\
+			total:\tDisplays total hours in current log\n\
+			quit:\tQuits this program")
 
 # Runs the "clear" command
 def runClearCommand():
+
 	# Open log file
 	with open('log.txt', 'r+') as logFile:
 		
@@ -61,13 +64,16 @@ def runClearCommand():
 		logFile.seek(0)
 
 		# Put in headers
-		logFile.write("Description" + nSpaces(9) + "Start Date" + nSpaces(22) + "End Date" + nSpaces(24) + "Hours\n")
+		logFile.write("Description" + nSpaces(29) + "Start Date" + nSpaces(22) + "End Date" + nSpaces(24) + "Hours\n")
 
 		# Reset state
 		with open('state.txt', 'w') as stateFile:
 			
 			json.dump(LogState.idleState.value, stateFile)
 			stateFile.truncate()
+
+	# Print clearing file
+	print("Clearing log.txt (it can now be found in log_history.txt)")
 
 # Runs the "state" command
 def runStateCommand(state):
@@ -76,15 +82,27 @@ def runStateCommand(state):
 	print("Current state is:", state)
 
 # Runs the "start" command
-def runStartCommand(stateFile):
+def runStartCommand(stateFile, description):
 	
+	# Trim off edge quotes if description had them
+	if description[0] == '\"' and description[-1] == '\"':
+		description = description[1:-1]
+
+	# Get padded or clipped description to size 20
+	descripColSize = 40	# column size of description
+	trimmedDescription = description[:descripColSize - 4] + ' ' * max(descripColSize - 4 - len(description), 0)
+	# This block is redudant since below checks for description size
+
+	# Check if the description is too long
+	if len(description) > descripColSize:
+		print("Description is too long. Maximum size is " + str(descripColSize))
+		return
+
 	# Open logging file in append mode
 	with open('log.txt', 'a+') as logFile:
 
-		# Insert description (padded or clipped to size 20)
-		descripColSize = 20	# column size of description
-		description = sys.argv[2][:descripColSize - 4] + ' ' * max(descripColSize - 4 - len(sys.argv[2]), 0)
-		logFile.write(description + ' ' * 4)
+		# Insert description
+		logFile.write(trimmedDescription + ' ' * 4)
 
 		# Insert start date
 		logFile.write( getDate() + nSpaces(4) )
@@ -92,6 +110,9 @@ def runStartCommand(stateFile):
 		# Update state
 		json.dump(LogState.loggingState.value, stateFile)
 		stateFile.truncate()	# Cuts down to correct size
+
+		# Print started logging
+		print("Started logging:", trimmedDescription)
 
 # Runs the "end" command
 def runEndCommand(stateFile):
@@ -116,6 +137,9 @@ def runEndCommand(stateFile):
 		json.dump(LogState.idleState.value, stateFile)
 		stateFile.truncate()	# Cuts down to correct size
 
+		# Print ended logging and hours spent
+		print("Ended logging: spent " + "{:.2f}".format(deltaTime), "hours")
+
 # Runs the "total" command
 def runTotalCommand():
 	
@@ -128,12 +152,11 @@ def runTotalCommand():
 
 		# Add up the total hours
 		totalHours = 0
-		for line in lineList[1:]:	# SKip first line (headers)
-			totalHours += float(line[84:89])
+		for line in lineList[1:]:	# Skip first line (headers)
+			totalHours += float(line[104:109])
 		
 		# Print total hours
-		print("Since " + getDate()[:10] + "," )
-		print("Total hours logged: {:.2f}".format(totalHours) + " hours")
+		print("Total hours logged since " + getDate()[:10] + ": {:.2f}".format(totalHours) + " hours")
 
 # Returns true iff the input command parameter list is valid
 def isValidCommand(cmdParamList):
@@ -146,15 +169,22 @@ def isValidCommand(cmdParamList):
 			cmd == "end" or \
 			cmd == "clear" or \
 			cmd == "state" or \
-			cmd == "total"
+			cmd == "total" or \
+			cmd == "quit"
 			):
 			return True
+		
+		else:
+			return False
 
 	elif len(cmdParamList) == 2:
 
-		if cmd == "start":
+		if cmd == "start" and cmdParamList[1] != "":
 			return True
-	
+
+		else:
+			return False
+
 	else:
 		return False
 
@@ -163,11 +193,12 @@ def processCommandInteractively(cmdParamList):
 	
 	# Valid commands are:
 	#	help: Outputs this list of commands
-	#	start: Starts logging if state is Idle
+	#	start description: Starts logging if state is Idle
 	#	end: Ends logging if state is Logging
 	#	clear: Clears log.txt and appends it to log_history.txt
 	#	state: Displays current state
 	#	total: Displays total hours in current log
+	#	quit: Quits this program
 
 	# Check command validity
 	if not(isValidCommand(cmdParamList) ):
@@ -177,6 +208,11 @@ def processCommandInteractively(cmdParamList):
 
 	# Assign cmd for readability
 	cmd = cmdParamList[0]
+
+	# Check if quitting
+	if cmd == "quit":
+		print("Quitting...")
+		sys.exit()
 
 	# Check if help command
 	if cmd == "help":
@@ -195,13 +231,6 @@ def processCommandInteractively(cmdParamList):
 		state = json.load(stateFile)
 		stateFile.seek(0)	# Reset file ptr
 
-		# Stop when quit command is input
-		if (cmd == "quit"):
-			print("Quitting...")
-			sys.exit()
-
-		# Else, check perform the necessary command
-		
 		# State command
 		if cmd == "state":
 			# Run the state command
@@ -210,9 +239,11 @@ def processCommandInteractively(cmdParamList):
 		# Start command
 		elif cmd == "start":
 
+			description = cmdParamList[1]
+
 			if state == "Idle":
 				# Run the start command
-				runStartCommand(stateFile)
+				runStartCommand(stateFile, description)
 
 			else:
 				# Print invalid
@@ -246,6 +277,12 @@ def runInteractively():
 	
 	inputCommand = input("> ")	# Query for the command
 	cmdParamList = inputCommand.split(" ")	# Get a list of the space-separated cmd params.
+
+	# If command is start, then make everything else the second argument
+	if cmdParamList[0] == "start" and len(cmdParamList) >= 2:
+		cmdParamList[1] = ' '.join(cmdParamList[1:])
+		cmdParamList = cmdParamList[:2]
+
 	processCommandInteractively(cmdParamList)	# Process the command
 
 	# Run until quit command is input
@@ -253,6 +290,12 @@ def runInteractively():
 
 		inputCommand = input("> ")	# Query for the command
 		cmdParamList = inputCommand.split(" ")	# Get a list of the space-separated cmd params.
+
+		# If command is start, then make everything else the second argument
+		if cmdParamList[0] == "start" and len(cmdParamList) >= 2:
+			cmdParamList[1] = ' '.join(cmdParamList[1:])
+			cmdParamList = cmdParamList[:2]
+
 		processCommandInteractively(cmdParamList)	# Process the command
 
 # Check if interactive mode (no arguments)
@@ -294,7 +337,7 @@ elif sys.argv[1] == "start":
 
 	if state == "Idle":
 		# Run the start command
-		runStartCommand(stateFile)
+		runStartCommand(stateFile, sys.argv[2])
 
 	else:
 		# Print invalid
