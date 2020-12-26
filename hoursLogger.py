@@ -239,11 +239,6 @@ def processCommandInteractively(cmdParamList):
 	# Assign cmd for readability
 	cmd = cmdParamList[0]
 
-	# Check if quitting
-	if cmd == "quit":
-		print("Quitting...")
-		sys.exit()
-
 	# Check if help command
 	if cmd == "help":
 		runHelpCommand()
@@ -261,8 +256,18 @@ def processCommandInteractively(cmdParamList):
 		state = json.load(stateFile)
 		stateFile.seek(0)	# Reset file ptr
 
+		
+		# Check if quitting
+		if cmd == "quit":
+			print("Quitting...")
+
+			if state == "Logging":
+				runEndCommand(stateFile)
+			
+			sys.exit()
+
 		# State command
-		if cmd == "state":
+		elif cmd == "state":
 			# Run the state command
 			runStateCommand(state)
 			
