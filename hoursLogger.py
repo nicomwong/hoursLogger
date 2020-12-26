@@ -45,6 +45,7 @@ def runHelpCommand():
 			clear:\tClears log.txt and appends it to log_history.txt\n\
 			state:\tDisplays current state\n\
 			total:\tDisplays total hours in current log\n\
+			show:\tShows current log\n\
 			quit:\tQuits this program")
 
 # Runs the "clear" command
@@ -175,6 +176,14 @@ def runTotalCommand():
 		# Print total hours
 		print("Total hours logged since " + getDate()[:10] + ": {:.2f}".format(totalHours) + " hours")
 
+# Runs the "show" command
+def runShowCommand():
+	
+	print("Displaying log.txt...")
+
+	# Displays the log file to stdout
+	subprocess.run("cat log.txt", shell=True)
+
 # Returns true iff the input command parameter list is valid
 def isValidCommand(cmdParamList):
 	
@@ -188,6 +197,7 @@ def isValidCommand(cmdParamList):
 			cmd == "clear" or \
 			cmd == "state" or \
 			cmd == "total" or \
+			cmd == "show" or \
 			cmd == "quit"
 			):
 			return True
@@ -217,6 +227,7 @@ def processCommandInteractively(cmdParamList):
 	#	clear: Clears log.txt and appends it to log_history.txt
 	#	state: Displays current state
 	#	total: Displays total hours in current log
+	#	show: Shows current log
 	#	quit: Quits this program
 
 	# Check command validity
@@ -241,6 +252,11 @@ def processCommandInteractively(cmdParamList):
 	# Check if clearing
 	if cmd == "clear":
 		runClearCommand()
+		return
+
+	# Check if show command
+	if cmd == "show":
+		runShowCommand()
 		return
 
 	# Open state file in read/write mode
