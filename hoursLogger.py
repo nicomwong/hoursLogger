@@ -40,6 +40,7 @@ def runHelpCommand():
 			help:\tOutputs this list of commands\n\
 			start description:\tStarts logging if state is Idle\n\
 						'description' is a maximum of 40 characters\n\
+			hours:\tDisplays how many hours have passed since the log was started\n\
 			end:\tEnds logging if state is Logging\n\
 			clear:\tClears log.txt and appends it to log_history.txt\n\
 			state:\tDisplays current state\n\
@@ -114,6 +115,22 @@ def runStartCommand(stateFile, description):
 		# Print started logging
 		print("Started logging:", trimmedDescription)
 
+# Runs the "check" command
+def runHoursCommand(stateFile):
+
+	# Open logging file in append mode
+	with open('log.txt', 'a+') as logFile:
+
+		# Calc. delta time in hours
+		logFile.seek( logFile.tell() - 32)	# Go back to beginning of the start date
+		startTime = logFile.readline()[11:19]	# Read the startTime
+		endDate = getDate()
+		endTime = endDate[11:19]	# Get the endTime
+		deltaTime = timeDifference(startTime, endTime)
+
+		# Print the number of hours passed
+		print("{:.2f}".format(deltaTime), "hours since log started")
+
 # Runs the "end" command
 def runEndCommand(stateFile):
 	
@@ -138,7 +155,7 @@ def runEndCommand(stateFile):
 		stateFile.truncate()	# Cuts down to correct size
 
 		# Print ended logging and hours spent
-		print("Ended logging: spent " + "{:.2f}".format(deltaTime), "hours")
+		print("Spent " + "{:.2f}".format(deltaTime), "hours. Ending log...")
 
 # Runs the "total" command
 def runTotalCommand():
@@ -166,6 +183,7 @@ def isValidCommand(cmdParamList):
 	if len(cmdParamList) == 1:
 
 		if (cmd == "help" or \
+			cmd == "hours" or \
 			cmd == "end" or \
 			cmd == "clear" or \
 			cmd == "state" or \
@@ -194,6 +212,7 @@ def processCommandInteractively(cmdParamList):
 	# Valid commands are:
 	#	help: Outputs this list of commands
 	#	start description: Starts logging if state is Idle
+	#	hours: Displays how many hours have passed since the log was started
 	#	end: Ends logging if state is Logging
 	#	clear: Clears log.txt and appends it to log_history.txt
 	#	state: Displays current state
@@ -248,6 +267,17 @@ def processCommandInteractively(cmdParamList):
 			else:
 				# Print invalid
 				print("Cannot start logging. Current state is already Logging.")
+
+		# Check command
+		elif cmd == "hours":
+			
+			if state == "Logging":
+				# Run the check command
+				runHoursCommand(stateFile)
+
+			else:
+				# Print invalid
+				print("No log started yet.")
 
 		# End command
 		elif cmd == "end":
